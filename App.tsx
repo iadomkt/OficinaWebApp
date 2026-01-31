@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
@@ -7,25 +7,68 @@ import Sales from './components/Sales';
 import AIInsights from './components/AIInsights';
 import { View, Part, Sale } from './types';
 import { INITIAL_PARTS, INITIAL_SALES } from './constants';
-import { Bell, Search, User } from 'lucide-react';
+import { Bell, Search, User, Loader2 } from 'lucide-react';
+import { partsService } from './services/partsService';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [parts, setParts] = useState<Part[]>(INITIAL_PARTS);
+  const [parts, setParts] = useState<Part[]>([]);
   const [sales, setSales] = useState<Sale[]>(INITIAL_SALES);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadParts();
+  }, []);
+
+  const loadParts = async () => {
+    try {
+      setIsLoading(true);
+      const data = await partsService.fetchParts();
+
+      if (data.length === 0) {
+        // Seed initial data if empty
+        for (const part of INITIAL_PARTS) {
+          await partsService.addPart(part);
+        }
+        setParts(await partsService.fetchParts());
+      } else {
+        setParts(data);
+      }
+    } catch (error) {
+      console.error('Failed to load parts:', error);
+      alert('Erro ao carregar inventário. Verifique o console.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Inventory Handlers
-  const handleAddPart = useCallback((newPart: Part) => {
-    setParts(prev => [...prev, newPart]);
+  const handleAddPart = useCallback(async (newPart: Part) => {
+    try {
+      const addedPart = await partsService.addPart(newPart);
+      setParts(prev => [...prev, addedPart]);
+    } catch (error) {
+      alert('Erro ao adicionar peça.');
+    }
   }, []);
 
-  const handleUpdatePart = useCallback((updatedPart: Part) => {
-    setParts(prev => prev.map(p => p.id === updatedPart.id ? updatedPart : p));
+  const handleUpdatePart = useCallback(async (updatedPart: Part) => {
+    try {
+      const savedPart = await partsService.updatePart(updatedPart);
+      setParts(prev => prev.map(p => p.id === savedPart.id ? savedPart : p));
+    } catch (error) {
+      alert('Erro ao atualizar peça.');
+    }
   }, []);
 
-  const handleDeletePart = useCallback((id: string) => {
+  const handleDeletePart = useCallback(async (id: string) => {
     if (confirm('Deseja realmente excluir esta peça?')) {
-      setParts(prev => prev.filter(p => p.id !== id));
+      try {
+        await partsService.deletePart(id);
+        setParts(prev => prev.filter(p => p.id !== id));
+      } catch (error) {
+        alert('Erro ao excluir peça.');
+      }
     }
   }, []);
 
@@ -38,8 +81,8 @@ const App: React.FC = () => {
     };
 
     // Lowers the stock
-    setParts(prev => prev.map(p => 
-      p.id === newSaleData.partId 
+    setParts(prev => prev.map(p =>
+      p.id === newSaleData.partId
         ? { ...p, currentStock: p.currentStock - newSaleData.quantity }
         : p
     ));
@@ -53,8 +96,8 @@ const App: React.FC = () => {
         return <Dashboard parts={parts} sales={sales} />;
       case 'inventory':
         return (
-          <Inventory 
-            parts={parts} 
+          <Inventory
+            parts={parts}
             onAddPart={handleAddPart}
             onUpdatePart={handleUpdatePart}
             onDeletePart={handleDeletePart}
@@ -69,14 +112,14 @@ const App: React.FC = () => {
     }
   };
 
-  const criticalItemsCount = useMemo(() => 
-    parts.filter(p => p.currentStock <= p.minStock).length, 
-  [parts]);
+  const criticalItemsCount = useMemo(() =>
+    parts.filter(p => p.currentStock <= p.minStock).length,
+    [parts]);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
-      
+
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-2">
@@ -88,13 +131,13 @@ const App: React.FC = () => {
           <div className="flex items-center gap-6">
             <div className="hidden md:flex items-center relative">
               <Search className="absolute left-3 text-slate-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="Busca global..." 
+              <input
+                type="text"
+                placeholder="Busca global..."
                 className="pl-10 pr-4 py-1.5 bg-slate-100 border-none rounded-full text-sm w-64 focus:ring-2 focus:ring-blue-500 transition-all outline-none"
               />
             </div>
-            
+
             <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
               <Bell size={20} />
               {criticalItemsCount > 0 && (
