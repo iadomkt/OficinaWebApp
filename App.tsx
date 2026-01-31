@@ -83,6 +83,17 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleRestock = useCallback(async (partId: string, quantity: number, costPrice: number, supplier: string) => {
+    try {
+      await partsService.addStock(partId, quantity, costPrice, supplier);
+      await loadParts(); // Refresh inventory
+      alert('Estoque adicionado com sucesso!');
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao adicionar estoque.');
+    }
+  }, []);
+
   // Sales Handlers
   const handleAddSale = useCallback(async (newSaleData: Omit<Sale, 'id' | 'timestamp'>) => {
     try {
@@ -102,7 +113,7 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard parts={parts} sales={sales} />;
+        return <Dashboard parts={parts} sales={sales} onNavigate={setCurrentView} />;
       case 'inventory':
         return (
           <Inventory
@@ -110,6 +121,7 @@ const App: React.FC = () => {
             onAddPart={handleAddPart}
             onUpdatePart={handleUpdatePart}
             onDeletePart={handleDeletePart}
+            onRestock={handleRestock}
           />
         );
       case 'sales':
@@ -117,7 +129,7 @@ const App: React.FC = () => {
       case 'ai-insights':
         return <AIInsights parts={parts} sales={sales} />;
       default:
-        return <Dashboard parts={parts} sales={sales} />;
+        return <Dashboard parts={parts} sales={sales} onNavigate={setCurrentView} />;
     }
   };
 

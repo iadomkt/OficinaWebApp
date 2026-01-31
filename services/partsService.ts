@@ -64,6 +64,20 @@ export const partsService = {
         return mapToPart(data);
     },
 
+    async addStock(partId: string, quantity: number, costPrice: number, supplier: string): Promise<void> {
+        const { error } = await supabase.rpc('add_stock', {
+            p_part_id: partId,
+            p_quantity: quantity,
+            p_cost_price: costPrice,
+            p_supplier: supplier
+        });
+
+        if (error) {
+            console.error('Error adding stock:', error);
+            throw error;
+        }
+    },
+
     async deletePart(id: string): Promise<void> {
         const { error } = await supabase
             .from('parts')

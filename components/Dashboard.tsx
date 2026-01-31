@@ -1,21 +1,21 @@
 
 import React, { useMemo } from 'react';
 import { Part, Sale } from '../types';
-import { 
-  TrendingUp, 
-  AlertTriangle, 
-  DollarSign, 
+import {
+  TrendingUp,
+  AlertTriangle,
+  DollarSign,
   PackageCheck,
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   Cell
 } from 'recharts';
@@ -25,7 +25,7 @@ interface DashboardProps {
   sales: Sale[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ parts, sales }) => {
+const Dashboard: React.FC<DashboardProps & { onNavigate: (view: any) => void }> = ({ parts, sales, onNavigate }) => {
   const stats = useMemo(() => {
     const totalRevenue = sales.reduce((acc, s) => acc + s.totalValue, 0);
     const totalCost = sales.reduce((acc, s) => {
@@ -34,7 +34,7 @@ const Dashboard: React.FC<DashboardProps> = ({ parts, sales }) => {
     }, 0);
     const totalProfit = totalRevenue - totalCost;
     const criticalStock = parts.filter(p => p.currentStock <= p.minStock).length;
-    
+
     return {
       totalRevenue,
       totalProfit,
@@ -59,29 +59,29 @@ const Dashboard: React.FC<DashboardProps> = ({ parts, sales }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Faturamento Total" 
+        <StatCard
+          title="Faturamento Total"
           value={`R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={<DollarSign className="text-blue-600" />}
           trend="+12%"
           trendUp={true}
         />
-        <StatCard 
-          title="Lucro Líquido" 
+        <StatCard
+          title="Lucro Líquido"
           value={`R$ ${stats.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={<TrendingUp className="text-emerald-600" />}
           trend="+8.5%"
           trendUp={true}
         />
-        <StatCard 
-          title="Valor em Estoque" 
+        <StatCard
+          title="Valor em Estoque"
           value={`R$ ${stats.totalInventoryValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={<PackageCheck className="text-indigo-600" />}
           trend="-2.1%"
           trendUp={false}
         />
-        <StatCard 
-          title="Itens Críticos" 
+        <StatCard
+          title="Itens Críticos"
           value={stats.criticalStock.toString()}
           icon={<AlertTriangle className="text-amber-600" />}
           trend={stats.criticalStock > 3 ? "Atenção" : "Normal"}
@@ -99,7 +99,7 @@ const Dashboard: React.FC<DashboardProps> = ({ parts, sales }) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip 
+                <Tooltip
                   formatter={(value) => `R$ ${value}`}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
@@ -116,15 +116,24 @@ const Dashboard: React.FC<DashboardProps> = ({ parts, sales }) => {
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 transition-colors group">
+            <button
+              onClick={() => onNavigate('sales')}
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 transition-colors group"
+            >
               <span className="font-medium">Nova Venda</span>
               <ArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={20} />
             </button>
-            <button className="w-full flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 transition-colors group">
+            <button
+              onClick={() => onNavigate('inventory')}
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 transition-colors group"
+            >
               <span className="font-medium">Repor Estoque</span>
               <ArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={20} />
             </button>
-            <button className="w-full flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-700 transition-colors group">
+            <button
+              onClick={() => onNavigate('inventory')}
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-700 transition-colors group"
+            >
               <span className="font-medium">Cadastrar Peça</span>
               <ArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={20} />
             </button>
@@ -163,9 +172,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, trendUp,
   <div className={`bg-white p-6 rounded-xl border shadow-sm transition-all ${highlight ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-slate-200'}`}>
     <div className="flex items-center justify-between mb-4">
       <div className="p-2 rounded-lg bg-slate-50">{icon}</div>
-      <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
-        trendUp ? 'bg-emerald-50 text-emerald-600' : highlight ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
-      }`}>
+      <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${trendUp ? 'bg-emerald-50 text-emerald-600' : highlight ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+        }`}>
         {trendUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
         {trend}
       </div>
