@@ -9,6 +9,7 @@ import { View, Part, Sale } from './types';
 import { INITIAL_PARTS, INITIAL_SALES } from './constants';
 import { Bell, Search, User, Loader2 } from 'lucide-react';
 import { partsService } from './services/partsService';
+import { salesService } from './services/salesService';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -18,6 +19,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadParts();
+    loadSales();
   }, []);
 
   const loadParts = async () => {
@@ -39,6 +41,15 @@ const App: React.FC = () => {
       alert('Erro ao carregar inventário. Verifique o console.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadSales = async () => {
+    try {
+      const data = await salesService.fetchSales();
+      setSales(data);
+    } catch (error) {
+      console.error('Failed to load sales:', error);
     }
   };
 
@@ -73,21 +84,19 @@ const App: React.FC = () => {
   }, []);
 
   // Sales Handlers
-  const handleAddSale = useCallback((newSaleData: Omit<Sale, 'id' | 'timestamp'>) => {
-    const newSale: Sale = {
-      ...newSaleData,
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: new Date().toISOString()
-    };
+  const handleAddSale = useCallback(async (newSaleData: Omit<Sale, 'id' | 'timestamp'>) => {
+    try {
+      await salesService.addSale(newSaleData);
 
-    // Lowers the stock
-    setParts(prev => prev.map(p =>
-      p.id === newSaleData.partId
-        ? { ...p, currentStock: p.currentStock - newSaleData.quantity }
-        : p
-    ));
+      // Refresh both lists to ensure consistency
+      await loadSales();
+      await loadParts();
 
-    setSales(prev => [...prev, newSale]);
+      alert('Venda realizada com sucesso!');
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao registrar venda. Verifique o estoque.');
+    }
   }, []);
 
   const renderView = () => {
