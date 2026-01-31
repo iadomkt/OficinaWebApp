@@ -11,7 +11,10 @@ import { Bell, Search, User, Loader2 } from 'lucide-react';
 import { partsService } from './services/partsService';
 import { salesService } from './services/salesService';
 
-const App: React.FC = () => {
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Login from './components/Login';
+
+const AuthenticatedApp: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [parts, setParts] = useState<Part[]>([]);
   const [sales, setSales] = useState<Sale[]>(INITIAL_SALES);
@@ -185,6 +188,32 @@ const App: React.FC = () => {
         </div>
       </main>
     </div>
+  );
+};
+
+const AuthWrapper: React.FC = () => {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="animate-spin text-blue-600" size={40} />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Login />;
+  }
+
+  return <AuthenticatedApp />;
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AuthWrapper />
+    </AuthProvider>
   );
 };
 

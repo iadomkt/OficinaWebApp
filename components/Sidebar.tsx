@@ -2,6 +2,7 @@
 import React from 'react';
 import { LayoutDashboard, Package, ShoppingCart, Lightbulb, LogOut, Wrench } from 'lucide-react';
 import { View } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
   currentView: View;
@@ -9,6 +10,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView }) => {
+  const { signOut } = useAuth();
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inventory', label: 'Inventário', icon: Package },
@@ -33,11 +35,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView }) => {
             <button
               key={item.id}
               onClick={() => setCurrentView(item.id as View)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
             >
               <Icon size={20} />
               <span className="font-medium">{item.label}</span>
@@ -47,7 +48,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView }) => {
       </nav>
 
       <div className="p-4 border-t border-slate-800">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-red-900/20 hover:text-red-400 transition-colors">
+        <button
+          onClick={signOut}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-red-900/20 hover:text-red-400 transition-colors"
+        >
           <LogOut size={20} />
           <span className="font-medium">Sair</span>
         </button>
